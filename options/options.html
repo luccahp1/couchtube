@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>CouchTube settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="mark"></div>
+        <div>
+          <h1>CouchTube</h1>
+          <p>Turns YouTube into something you can drive from the couch.</p>
+        </div>
+      </header>
+
+      <div class="grid">
+        <main>
+          <section>
+            <h2>General</h2>
+            <div class="row">
+              <label for="enabled"><b>Enabled</b><i>Master switch for the overlay</i></label>
+              <input type="checkbox" id="enabled" class="switch" />
+            </div>
+            <div class="row">
+              <label for="glyphs"><b>Button glyphs</b><i>Match the letters printed on your pad</i></label>
+              <select id="glyphs">
+                <option value="xbox">Xbox (A B X Y)</option>
+                <option value="playstation">PlayStation (✕ ○ □ △)</option>
+                <option value="generic">Generic (1 2 3 4)</option>
+              </select>
+            </div>
+            <div class="row">
+              <label for="keyboardFallback"><b>Keyboard fallback</b><i>Arrow keys, Enter and Backspace act like the pad</i></label>
+              <input type="checkbox" id="keyboardFallback" class="switch" />
+            </div>
+            <div class="row">
+              <label for="hideCursor"><b>Hide the cursor</b><i>Comes back the moment you move the mouse</i></label>
+              <input type="checkbox" id="hideCursor" class="switch" />
+            </div>
+            <div class="row">
+              <label for="autoTheater"><b>Auto theater mode</b><i>Widen the player when a video opens</i></label>
+              <input type="checkbox" id="autoTheater" class="switch" />
+            </div>
+          </section>
+
+          <section>
+            <h2>Feel</h2>
+            <div class="row slider">
+              <label for="deadzone"><b>Stick deadzone</b><i>How far you push before it counts</i></label>
+              <input type="range" id="deadzone" min="0.1" max="0.8" step="0.05" />
+              <output data-for="deadzone"></output>
+            </div>
+            <div class="row slider">
+              <label for="repeatDelay"><b>Repeat delay</b><i>Hold time before a direction starts repeating</i></label>
+              <input type="range" id="repeatDelay" min="150" max="800" step="10" />
+              <output data-for="repeatDelay" data-unit="ms"></output>
+            </div>
+            <div class="row slider">
+              <label for="repeatRate"><b>Repeat rate</b><i>Gap between repeats once it gets going</i></label>
+              <input type="range" id="repeatRate" min="50" max="300" step="5" />
+              <output data-for="repeatRate" data-unit="ms"></output>
+            </div>
+            <div class="row slider">
+              <label for="hudTimeout"><b>HUD timeout</b><i>How long the player overlay stays up</i></label>
+              <input type="range" id="hudTimeout" min="1000" max="10000" step="200" />
+              <output data-for="hudTimeout" data-unit="ms"></output>
+            </div>
+          </section>
+
+          <section>
+            <h2>Playback</h2>
+            <div class="row slider">
+              <label for="seekStep"><b>Seek step</b><i>D-pad left / right</i></label>
+              <input type="range" id="seekStep" min="5" max="60" step="5" />
+              <output data-for="seekStep" data-unit="s"></output>
+            </div>
+            <div class="row slider">
+              <label for="seekStepBig"><b>Big seek step</b><i>Shoulder buttons</i></label>
+              <input type="range" id="seekStepBig" min="15" max="300" step="15" />
+              <output data-for="seekStepBig" data-unit="s"></output>
+            </div>
+            <div class="row slider">
+              <label for="volumeStep"><b>Volume step</b><i>D-pad up / down</i></label>
+              <input type="range" id="volumeStep" min="1" max="20" step="1" />
+              <output data-for="volumeStep" data-unit="%"></output>
+            </div>
+            <div class="row slider">
+              <label for="bigModeZoom"><b>Couch zoom level</b><i>Page scale when zoom is on</i></label>
+              <input type="range" id="bigModeZoom" min="1" max="2" step="0.05" />
+              <output data-for="bigModeZoom" data-unit="×"></output>
+            </div>
+          </section>
+
+          <div class="actions">
+            <button id="reset" class="ghost">Reset to defaults</button>
+            <span id="saved" class="saved">Saved</span>
+          </div>
+        </main>
+
+        <aside>
+          <section class="tester">
+            <h2>Controller test</h2>
+            <p class="pad-id" id="padId">Press a button on your controller.</p>
+            <div class="pads" id="pads"></div>
+            <div class="sticks">
+              <div class="stick"><div class="nub" id="lstick"></div><span>Left</span></div>
+              <div class="stick"><div class="nub" id="rstick"></div><span>Right</span></div>
+            </div>
+          </section>
+
+          <section class="sheet">
+            <h2>Cheat sheet</h2>
+            <div class="sheet-group">
+              <h3>Browsing</h3>
+              <ul>
+                <li><em>D-pad</em> move focus</li>
+                <li><em>A</em> open</li>
+                <li><em>B</em> back</li>
+                <li><em>X</em> search keyboard</li>
+                <li><em>Y</em> couch zoom</li>
+                <li><em>LB / RB</em> page up / down</li>
+                <li><em>View</em> jump to the player</li>
+              </ul>
+            </div>
+            <div class="sheet-group">
+              <h3>Player</h3>
+              <ul>
+                <li><em>A</em> play / pause</li>
+                <li><em>D-pad ←→</em> seek, hold to scrub</li>
+                <li><em>D-pad ↑↓</em> volume</li>
+                <li><em>X</em> captions</li>
+                <li><em>Y</em> fullscreen</li>
+                <li><em>LT / RT</em> speed</li>
+                <li><em>B</em> leave fullscreen, then browse</li>
+              </ul>
+            </div>
+            <p class="note">Press <em>Menu</em> (≡) on the pad any time for this list on screen.</p>
+          </section>
+        </aside>
+      </div>
+    </div>
+    <script src="options.js"></script>
+  </body>
+</html>

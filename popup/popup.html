@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>CouchTube</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <div class="mark"></div>
+      <div>
+        <h1>CouchTube</h1>
+        <p class="tag">Controller UI for YouTube</p>
+      </div>
+    </header>
+
+    <div class="status" id="status">
+      <span class="dot" id="dot"></span>
+      <span id="statusText">Looking for a controller…</span>
+    </div>
+
+    <section>
+      <label class="row">
+        <span>
+          <b>Enabled</b>
+          <i>Turn the whole overlay off</i>
+        </span>
+        <input type="checkbox" id="enabled" class="switch" />
+      </label>
+
+      <label class="row">
+        <span>
+          <b>Couch zoom</b>
+          <i>Scale the page up so it reads from the bed</i>
+        </span>
+        <input type="checkbox" id="bigMode" class="switch" />
+      </label>
+
+      <label class="row">
+        <span>
+          <b>Hide the cursor</b>
+          <i>Mouse pointer disappears while you use the pad</i>
+        </span>
+        <input type="checkbox" id="hideCursor" class="switch" />
+      </label>
+
+      <label class="row">
+        <span>
+          <b>Keyboard fallback</b>
+          <i>Arrow keys + Enter drive it too</i>
+        </span>
+        <input type="checkbox" id="keyboardFallback" class="switch" />
+      </label>
+
+      <label class="row">
+        <span>
+          <b>Button glyphs</b>
+          <i>Match what is printed on your pad</i>
+        </span>
+        <select id="glyphs">
+          <option value="xbox">Xbox</option>
+          <option value="playstation">PlayStation</option>
+          <option value="generic">Generic</option>
+        </select>
+      </label>
+    </section>
+
+    <footer>
+      <button id="options">All settings</button>
+      <span class="hint">Press <kbd>≡</kbd> on the pad for the full control sheet</span>
+    </footer>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
