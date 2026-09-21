@@ -13,7 +13,7 @@
     node = el('div', 'hud');
     node.innerHTML = `
       <div class="title"></div>
-      <div class="channel"></div>
+      <div class="meta"></div>
       <div class="bar">
         <div class="buffered"></div>
         <div class="played"></div>
@@ -27,7 +27,7 @@
     CT.ui.layer.appendChild(node);
     parts = {
       title: node.querySelector('.title'),
-      channel: node.querySelector('.channel'),
+      meta: node.querySelector('.meta'),
       buffered: node.querySelector('.buffered'),
       played: node.querySelector('.played'),
       knob: node.querySelector('.knob'),
@@ -47,17 +47,17 @@
     if (!visible) return;
     raf = requestAnimationFrame(paint);
 
-    const v = CT.yt.video();
+    const v = CT.site.video();
     if (!v) return;
 
     // Track the player every frame so the HUD stays glued to the video through
     // theater toggles, window resizes and fullscreen.
-    CT.ui.frameTo(node, CT.yt.playerRect());
+    CT.ui.frameTo(node, CT.site.playerRect());
 
-    const live = CT.yt.isLive();
+    const live = CT.site.isLive();
     const dur = isFinite(v.duration) && v.duration > 0 ? v.duration : 0;
     const pct = dur ? CT.clamp(v.currentTime / dur, 0, 1) : 1;
-    const buf = dur ? CT.clamp(CT.yt.bufferedEnd() / dur, 0, 1) : 1;
+    const buf = dur ? CT.clamp(CT.site.bufferedEnd() / dur, 0, 1) : 1;
 
     parts.played.style.width = pct * 100 + '%';
     parts.buffered.style.width = buf * 100 + '%';
@@ -76,8 +76,8 @@
 
   function refreshMeta() {
     if (!parts) return;
-    parts.title.textContent = CT.yt.title();
-    parts.channel.textContent = CT.yt.channel();
+    parts.title.textContent = CT.site.title();
+    parts.meta.textContent = CT.site.subtitle();
   }
 
   function show(sticky) {

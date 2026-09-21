@@ -87,10 +87,12 @@ export class Session {
       if (msg.method === 'Runtime.executionContextCreated') this.contexts.push(msg.params.context);
     };
     this.ws.addEventListener('message', collect);
+    // Enabling Runtime replays every existing context, but only on the way from
+    // off to on, so toggle it. Otherwise a second call after a navigation sees
+    // nothing and hands back the context id of a page that is already gone.
+    await this.send('Runtime.disable');
     await this.send('Runtime.enable');
     await sleep(400);
-    // Re-running the page's scripts is not needed; enabling Runtime replays
-    // every existing context.
     const hit = this.contexts.find((c) => (c.name || '').includes(nameMatch));
     this.ws.removeEventListener('message', collect);
     return hit ? hit.id : null;

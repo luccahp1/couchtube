@@ -99,3 +99,45 @@ CT.bus = (function () {
     },
   };
 })();
+
+// Window-level fullscreen. Nothing about this is site specific: it is here so
+// both adapters share one cache of what the service worker last told us, since
+// page metrics cannot be trusted to work it out (mixed-DPI multi-monitor lies
+// in both directions).
+CT.win = (function () {
+  let windowFs = false;
+
+  function tell(message) {
+    try {
+      chrome.runtime.sendMessage(message, (resp) => {
+        void chrome.runtime.lastError;
+        if (resp && resp.ok) windowFs = !!resp.fullscreen;
+      });
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  // Re-check after the user may have changed things behind our back (F11).
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) tell({ type: 'window-state' });
+  });
+
+  return {
+    get fullscreen() {
+      return windowFs;
+    },
+    set(on) {
+      return tell({ type: 'window-fullscreen', on });
+    },
+    sync() {
+      return tell({ type: 'window-state' });
+    },
+  };
+})();
+
+// Element fullscreen, which either adapter may or may not have managed to get.
+CT.isElementFullscreen = function () {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement);
+};

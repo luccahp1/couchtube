@@ -3,12 +3,15 @@
 # your everyday Brave window is safe.
 param(
   [string]$Url = 'https://www.youtube.com/',
+  # Load a different copy of the extension, which is how the Netflix fixtures
+  # get driven: tools/pack-test-ext.mjs prints the folder to pass here.
+  [string]$Ext,
   [switch]$Devtools,
   [switch]$KillOnly,
   [switch]$Fresh
 )
 
-$ext = Split-Path -Parent $PSScriptRoot
+$ext = if ($Ext) { $Ext } else { Split-Path -Parent $PSScriptRoot }
 $profileDir = Join-Path $env:TEMP 'couchtube-dev-profile'
 $brave = 'C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe'
 

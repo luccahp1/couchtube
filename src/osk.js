@@ -29,7 +29,7 @@
     panel = el('div', 'panel osk');
     panel.innerHTML = `
       <div class="head">
-        <h2>Search YouTube</h2>
+        <h2>Search ${CT.site.label}</h2>
         <div class="brand"><span class="dot"></span>CouchTube</div>
       </div>
       <div class="field"><span class="txt"></span><span class="caret"></span></div>

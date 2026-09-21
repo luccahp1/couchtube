@@ -1,16 +1,18 @@
 # State — CouchTube
 
-_As of 2026-09-11._
+_As of 2026-09-21._
 
-**Status:** paused
+**Status:** active
 **Stack:** browser-extension, javascript, mv3
 **Repo:** luccahp1/couchtube
 
 ## What works
 
-- Working v0.1.0, loaded unpacked in Brave and tested on live YouTube.
-- 21-check end-to-end suite passes.
-- Gamepad polling with deadzone, auto-repeat and hold acceleration.
+- v0.2.0. Works on YouTube and Netflix, one adapter per site behind `CT.site`.
+- 21 checks on live YouTube and 39 on the Netflix fixtures, all passing headless.
+- Netflix playback goes through Netflix's own player API, not the video element.
+- R3 on Netflix skips the intro when there is one, else next episode.
+- Netflix rows page along when you run off the end.
 
 ## In progress
 
@@ -19,11 +21,12 @@ _As of 2026-09-11._
 ## How to run
 
 ```
+node tools/run-e2e.mjs              # both suites, headless, ~90s
+node tools/run-e2e.mjs netflix      # fixtures only, no network
 pwsh tools/dev-brave.ps1 -Fresh     # throwaway Brave on monitor 2, CDP on :9222
-node tools/e2e.mjs                  # 21-check suite
-node tools/probe.mjs down right confirm
 ```
 
 ## How to deploy
 
-Loaded unpacked. No store listing.
+Loaded unpacked from C:\Projects\couchtube. No store listing. Moving the folder
+unloads it, load it again from the new path.

@@ -1,5 +1,6 @@
 // Everything that knows what YouTube's DOM looks like lives here, so when they
-// reshuffle their markup there is exactly one file to fix.
+// reshuffle their markup there is exactly one file to fix. Same shape as
+// src/nf.js: both implement the adapter interface that CT.site hands out.
 (function () {
   function video() {
     return (
@@ -43,7 +44,7 @@
     return node ? node.textContent.trim() : document.title.replace(/ - YouTube$/, '');
   }
 
-  function channel() {
+  function subtitle() {
     const node =
       document.querySelector('#owner #channel-name a') ||
       document.querySelector('ytd-channel-name a') ||
@@ -122,42 +123,13 @@
     return btn.getAttribute('aria-pressed') === 'true';
   }
 
-  function isFullscreen() {
-    return !!(document.fullscreenElement || document.webkitFullscreenElement);
-  }
-
-  // Cache of the browser window's own fullscreen state. Only ever written from
-  // what the service worker reports back, never guessed from page metrics.
-  let windowFs = false;
-
-  function tellWorker(message) {
-    try {
-      chrome.runtime.sendMessage(message, (resp) => {
-        void chrome.runtime.lastError;
-        if (resp && resp.ok) windowFs = !!resp.fullscreen;
-      });
-      return true;
-    } catch (err) {
-      return false;
-    }
-  }
-
-  function windowFullscreen(on) {
-    return tellWorker({ type: 'window-fullscreen', on });
-  }
-
-  function syncWindowState() {
-    return tellWorker({ type: 'window-state' });
-  }
-
-  // Re-check after the user may have changed things behind our back (F11).
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) syncWindowState();
-  });
+  const isFullscreen = CT.isElementFullscreen;
+  const windowFullscreen = (on) => CT.win.set(on);
+  const syncWindowState = () => CT.win.sync();
 
   // Element fullscreen and window fullscreen both count as "we are big now".
   function isAnyFullscreen() {
-    return isFullscreen() || windowFs;
+    return isFullscreen() || CT.win.fullscreen;
   }
 
   // Try the real thing first: if we happen to have user activation (keyboard
@@ -194,7 +166,7 @@
       document.exitFullscreen();
       did = true;
     }
-    if (windowFs) {
+    if (CT.win.fullscreen) {
       windowFullscreen(false);
       did = true;
     }
@@ -210,19 +182,21 @@
     return !!(flexy && flexy.hasAttribute('theater'));
   }
 
+  // Returns a label to toast, or null if there was nothing to go to. Netflix's
+  // adapter uses the same contract to say whether it skipped or advanced.
   function nextVideo() {
-    if (clickControl('.ytp-next-button:not([aria-disabled="true"])')) return true;
+    if (clickControl('.ytp-next-button:not([aria-disabled="true"])')) return 'Next video';
     // Fall back to the first thing in the up-next rail.
     const up = document.querySelector('ytd-compact-video-renderer a#thumbnail');
     if (up) {
       up.click();
-      return true;
+      return 'Next video';
     }
-    return false;
+    return null;
   }
 
   function prevVideo() {
-    return clickControl('.ytp-prev-button:not([aria-disabled="true"])');
+    return clickControl('.ytp-prev-button:not([aria-disabled="true"])') ? 'Previous video' : null;
   }
 
   function bufferedEnd() {
@@ -257,14 +231,48 @@
     if (a && a !== document.body && a.blur) a.blur();
   }
 
+  // What browse mode should treat as one focusable tile. One entry per card,
+  // otherwise every thumbnail offers three near-identical targets.
+  const CARDS = [
+    'ytd-rich-item-renderer',
+    'ytd-video-renderer',
+    'ytd-compact-video-renderer',
+    'ytd-grid-video-renderer',
+    'ytd-playlist-renderer',
+    'ytd-radio-renderer',
+    'ytd-channel-renderer',
+    'ytd-reel-item-renderer',
+    'ytd-rich-grid-slim-media',
+    'ytd-guide-entry-renderer',
+    'ytd-mini-guide-entry-renderer',
+    'ytd-comment-thread-renderer',
+  ];
+
+  const EXCLUDE = ['.ytp-chrome-bottom', '.ytp-chrome-top', '#movie_player', 'tp-yt-iron-overlay-backdrop'];
+
+  // Our HUD replaces YouTube's control bar while the pad is driving, otherwise
+  // you get two scrubbers stacked on top of each other.
+  const CHROME_CSS = `
+    html.couchtube-player .ytp-chrome-bottom,
+    html.couchtube-player .ytp-gradient-bottom,
+    html.couchtube-player .ytp-chrome-top {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transition: opacity 160ms linear;
+    }`;
+
   CT.yt = {
+    key: 'youtube',
+    label: 'YouTube',
+    handles: (host) => /(^|\.)youtube\.com$/.test(host),
+
     video,
     player,
     playerRect,
     isWatch,
     isLive,
     title,
-    channel,
+    subtitle,
     togglePlay,
     seekBy,
     seekTo,
@@ -287,5 +295,15 @@
     goHome,
     blurActive,
     SPEEDS,
+
+    // Browse tuning. YouTube's shelves keep off-screen tiles in the DOM but the
+    // nav has always coped with them, so the horizontal band stays wide open.
+    cards: CARDS,
+    exclude: EXCLUDE,
+    band: { top: -1.5, bottom: 2.5, left: -Infinity, right: Infinity },
+    chromeCss: CHROME_CSS,
+    // YouTube's router fires this, and it is faster than waiting for the URL poll.
+    navEvents: ['yt-navigate-finish'],
+    labels: { next: 'Next video', home: 'YouTube home', search: 'Search YouTube' },
   };
 })();

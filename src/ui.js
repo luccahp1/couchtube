@@ -24,7 +24,7 @@
 
     host = document.createElement('div');
     host.id = 'couchtube-root';
-    // The host itself must never affect YouTube's layout.
+    // The host itself must never affect the page's own layout.
     host.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:2147483000;';
     root = host.attachShadow({ mode: 'open' });
 
@@ -51,7 +51,7 @@
     return root;
   }
 
-  // When YouTube goes fullscreen the overlay has to live inside the fullscreen
+  // When the page goes fullscreen the overlay has to live inside the fullscreen
   // element or the browser simply will not paint it.
   function reparent() {
     if (!host) return;
@@ -63,7 +63,7 @@
 
   // Pins an overlay piece to a rect in viewport coordinates. Used to sit the
   // HUD and the OSD on top of the video instead of the whole window, which is
-  // what makes it read as a player overlay when YouTube is not fullscreen.
+  // what makes it read as a player overlay when the page is not fullscreen.
   function frameTo(node, rect) {
     if (!node) return;
     if (!rect) {
@@ -148,7 +148,7 @@
   }
 
   // Hints and the status chip both fade once you stop touching the pad, so the
-  // overlay never permanently covers YouTube's own chrome.
+  // overlay never permanently covers the site's own chrome.
   function armIdle() {
     clearTimeout(hintTimer);
     hintTimer = setTimeout(() => {
@@ -181,7 +181,7 @@
   // pct is 0..1 and draws the meter; pass null for a value-only readout.
   function showOsd(icon, value, pct, ms) {
     mount();
-    centerOn(osd, CT.yt && CT.yt.playerRect ? CT.yt.playerRect() : null);
+    centerOn(osd, CT.site && CT.site.playerRect ? CT.site.playerRect() : null);
     const iconNode = osd.querySelector('.icon');
     // Anything longer than a glyph or two is a word, so set it small and
     // lettered rather than blown up to glyph size.

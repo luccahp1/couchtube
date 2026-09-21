@@ -289,7 +289,7 @@
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
 }
 
-.hud .channel {
+.hud .meta {
   font-size: clamp(12px, 0.95vw, 16px);
   color: var(--ct-text-dim);
   margin-bottom: clamp(10px, 1.6vh, 20px);

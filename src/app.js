@@ -20,15 +20,7 @@
       s.textContent = `
         html.couchtube-nocursor, html.couchtube-nocursor * { cursor: none !important; }
         body.couchtube-big { zoom: var(--couchtube-zoom, 1.3); }
-        /* Our HUD replaces YouTube's control bar while the pad is driving,
-           otherwise you get two scrubbers stacked on top of each other. */
-        html.couchtube-player .ytp-chrome-bottom,
-        html.couchtube-player .ytp-gradient-bottom,
-        html.couchtube-player .ytp-chrome-top {
-          opacity: 0 !important;
-          pointer-events: none !important;
-          transition: opacity 160ms linear;
-        }
+        ${(CT.site && CT.site.chromeCss) || ''}
       `;
       (document.head || document.documentElement).appendChild(s);
     }
@@ -46,7 +38,7 @@
     document.documentElement.classList.toggle('couchtube-player', active && mode === MODE.PLAYER);
   }
 
-  // The moment a real mouse shows up, YouTube's own controls come back and the
+  // The moment a real mouse shows up, the site's own controls come back and the
   // cursor reappears. The pad takes over again on the next button press.
   function yieldToMouse() {
     document.documentElement.classList.remove('couchtube-nocursor', 'couchtube-player');
@@ -67,7 +59,7 @@
     if (!el) return;
     focused = el;
     // Until a pad actually talks to us this is bookkeeping only. Nobody wants a
-    // mystery red rectangle on YouTube because an extension is installed.
+    // mystery red rectangle on a page because an extension is installed.
     if (!active) return;
     if (!opts || opts.scroll !== false) CT.scrollIntoCenter(el);
     CT.ui.showRing(el);
@@ -98,6 +90,21 @@
       setFocus(next);
       return true;
     }
+
+    // Ran out of row. On a site with paginated rows the adapter can turn the
+    // page for us, and then we re-aim once the slide has finished.
+    if (from && CT.site.onEdge && CT.site.onEdge(dir, from)) {
+      setTimeout(() => {
+        const again = CT.spatial.next(from.isConnected ? from : null, dir);
+        if (again) setFocus(again);
+        else {
+          focused = null;
+          ensureFocus();
+        }
+      }, 520);
+      return true;
+    }
+
     // Nothing that way, nudge the page so lazy-loaded rows can appear.
     if (dir === 'down' || dir === 'up') {
       window.scrollBy({ top: dir === 'down' ? window.innerHeight * 0.6 : -window.innerHeight * 0.6, behavior: 'smooth' });
@@ -108,7 +115,7 @@
   function activate() {
     if (!focused || !focused.isConnected) return;
     CT.ui.pulseRing();
-    // Anchors get a real click so YouTube's SPA router handles it.
+    // Anchors get a real click so the site's own router handles it.
     focused.click();
   }
 
@@ -135,10 +142,13 @@
   function refreshHints() {
     if (CT.osk.open || CT.menu.open) return;
     if (mode === MODE.PLAYER) {
+      // A skip button on screen is the most useful thing we could be telling
+      // you about, so it takes the slot while it is there.
+      const skip = CT.site.skipAvailable && CT.site.skipAvailable();
       CT.ui.setHints([
         ['confirm', 'Play'],
         ['dpad', 'Seek / volume'],
-        ['y', 'Fullscreen'],
+        skip ? ['r3', 'Skip intro'] : ['y', 'Fullscreen'],
         ['select', 'Browse'],
         ['start', 'Controls'],
       ]);
@@ -164,12 +174,12 @@
   }
 
   function playerAction(action) {
-    const yt = CT.yt;
+    const site = CT.site;
     const s = CT.settings.values;
 
     switch (action) {
       case 'confirm': {
-        const playing = yt.togglePlay();
+        const playing = site.togglePlay();
         if (playing !== null) CT.ui.showOsd(playing ? '▶' : '❚❚', playing ? 'Play' : 'Pause', null, 800);
         CT.hud.show();
         return;
@@ -177,7 +187,7 @@
       case 'left':
       case 'right': {
         const delta = (action === 'left' ? -1 : 1) * seekStep();
-        const t = yt.seekBy(delta);
+        const t = site.seekBy(delta);
         if (t !== null) {
           CT.hud.markScrub();
           CT.hud.show();
@@ -188,7 +198,7 @@
       case 'l1':
       case 'r1': {
         const delta = (action === 'l1' ? -1 : 1) * s.seekStepBig;
-        const t = yt.seekBy(delta);
+        const t = site.seekBy(delta);
         if (t !== null) {
           CT.hud.markScrub();
           CT.hud.show();
@@ -198,19 +208,19 @@
       }
       case 'up':
       case 'down': {
-        const vol = yt.volumeBy((action === 'up' ? 1 : -1) * s.volumeStep);
+        const vol = site.volumeBy((action === 'up' ? 1 : -1) * s.volumeStep);
         if (vol !== null) CT.ui.showOsd('Volume', vol + '%', vol / 100);
         CT.hud.show();
         return;
       }
       case 'x': {
-        const on = yt.toggleCaptions();
+        const on = site.toggleCaptions();
         CT.ui.showOsd('Captions', on === null ? 'Unavailable' : on ? 'On' : 'Off', null, 900);
         CT.hud.show();
         return;
       }
       case 'y':
-        yt.toggleFullscreen();
+        site.toggleFullscreen();
         setTimeout(() => {
           CT.ui.reparent();
           CT.hud.show();
@@ -218,24 +228,28 @@
         return;
       case 'l2':
       case 'r2': {
-        const rate = yt.speedBy(action === 'l2' ? -1 : 1);
+        const rate = site.speedBy(action === 'l2' ? -1 : 1);
         if (rate !== null) CT.ui.showOsd('Speed', rate + '×', null, 900);
         CT.hud.show();
         return;
       }
       case 'l3': {
-        const muted = yt.toggleMute();
+        const muted = site.toggleMute();
         if (muted !== null) CT.ui.showOsd('Sound', muted ? 'Muted' : 'Unmuted', null, 900);
         return;
       }
-      case 'r3':
-        if (yt.nextVideo()) CT.ui.toast('Next video');
+      case 'r3': {
+        // The adapter returns what it actually did, because on Netflix this
+        // button is skip the intro right up until there is no intro to skip.
+        const did = site.nextVideo();
+        if (did) CT.ui.toast(typeof did === 'string' ? did : site.labels.next);
         return;
+      }
       case 'back':
         // Back walks out one layer at a time: fullscreen, then player mode,
         // then the browser's own history.
-        if (yt.isAnyFullscreen()) {
-          yt.exitFullscreen();
+        if (site.isAnyFullscreen()) {
+          site.exitFullscreen();
           setTimeout(CT.ui.reparent, 120);
           return;
         }
@@ -266,7 +280,7 @@
         return;
       case 'back':
         if (history.length > 1) history.back();
-        else CT.yt.goHome();
+        else CT.site.goHome();
         return;
       case 'x':
         openSearch();
@@ -292,10 +306,10 @@
         CT.ui.toast('Mouse', 'Cursor is back');
         return;
       case 'select':
-        if (CT.yt.isWatch() && CT.yt.video()) setMode(MODE.PLAYER);
+        if (CT.site.isWatch() && CT.site.video()) setMode(MODE.PLAYER);
         return;
       case 'home':
-        CT.yt.goHome();
+        CT.site.goHome();
         return;
       default:
         return;
@@ -306,7 +320,7 @@
     hideRing();
     CT.osk.show('', (q) => {
       CT.ui.toast('Searching', q);
-      CT.yt.search(q);
+      CT.site.search(q);
     });
   }
 
@@ -353,8 +367,8 @@
       return;
     }
 
-    // YouTube's own key handlers fight us if something in the page holds focus.
-    CT.yt.blurActive();
+    // The site's own key handlers fight us if something in the page holds focus.
+    CT.site.blurActive();
 
     if (mode === MODE.PLAYER) playerAction(action);
     else browseAction(action);
@@ -372,17 +386,21 @@
 
   function syncToPage(quiet) {
     focused = null;
-    const watch = CT.yt.isWatch() && CT.yt.video();
+    const site = CT.site;
+    const watch = site.isWatch() && site.video();
     setMode(watch ? MODE.PLAYER : MODE.BROWSE, quiet);
     if (!watch) {
-      // Give YouTube a beat to render its cards before we look for targets.
+      // Give the page a beat to render its cards before we look for targets.
       setTimeout(() => {
         if (mode === MODE.BROWSE) ensureFocus();
       }, 400);
     } else {
       CT.hud.refreshMeta();
-      // Only rearrange YouTube for someone who is actually on the pad.
-      if (active && CT.settings.values.autoTheater && !CT.yt.isTheater()) CT.yt.toggleTheater();
+      // Only rearrange the page for someone who is actually on the pad, and
+      // only where there is a theater mode to rearrange into.
+      if (active && CT.settings.values.autoTheater && site.toggleTheater && !site.isTheater()) {
+        site.toggleTheater();
+      }
     }
     applyBigMode();
   }
@@ -394,7 +412,12 @@
       CT.log('navigated ->', location.href);
       setTimeout(() => syncToPage(true), 500);
     };
-    document.addEventListener('yt-navigate-finish', () => setTimeout(() => syncToPage(true), 300));
+    // YouTube tells us directly and that is faster. Netflix tells us nothing,
+    // so the poll below is the only thing that notices.
+    for (const name of CT.site.navEvents || []) {
+      document.addEventListener(name, () => setTimeout(() => syncToPage(true), 300));
+    }
+    window.addEventListener('popstate', () => setTimeout(() => syncToPage(true), 400));
     setInterval(check, 700);
   }
 
@@ -430,13 +453,14 @@
 
     window.addEventListener('resize', () => focused && CT.ui.showRing(focused));
 
-    CT.yt.syncWindowState();
+    CT.site.syncWindowState();
     syncToPage(true);
     watchNavigation();
     CT.log('ready');
   }
 
   CT.settings.load().then(() => {
+    if (!CT.site) return;
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', start, { once: true });
     } else {

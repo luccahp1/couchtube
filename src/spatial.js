@@ -1,8 +1,8 @@
 // Geometry-based focus movement. Given the thing you are on and a direction,
 // pick the element a human would say is "the next one over".
 (function () {
-  // Broad on purpose. YouTube renames its components constantly, so leaning on
-  // roles and real anchors survives their redesigns better than ytd-* selectors.
+  // Broad on purpose. Both sites rename their components constantly, so leaning
+  // on roles and real anchors survives their redesigns better than tag names.
   const CANDIDATES = [
     'a[href]',
     'button',
@@ -17,36 +17,33 @@
     '[tabindex="0"]',
   ].join(',');
 
-  // One focusable per card, otherwise every tile offers three near-identical targets.
-  const CARDS = [
-    'ytd-rich-item-renderer',
-    'ytd-video-renderer',
-    'ytd-compact-video-renderer',
-    'ytd-grid-video-renderer',
-    'ytd-playlist-renderer',
-    'ytd-radio-renderer',
-    'ytd-channel-renderer',
-    'ytd-reel-item-renderer',
-    'ytd-rich-grid-slim-media',
-    'ytd-guide-entry-renderer',
-    'ytd-mini-guide-entry-renderer',
-    'ytd-comment-thread-renderer',
-  ].join(',');
+  // Which wrappers count as one tile, and what to stay out of, both come from
+  // the adapter. Ours is the only entry every site shares.
+  const ALWAYS_EXCLUDE = ['#couchtube-root', '[inert]'];
 
-  const EXCLUDE_INSIDE = [
-    '#couchtube-root',
-    '.ytp-chrome-bottom',
-    '.ytp-chrome-top',
-    '#movie_player',
-    'tp-yt-iron-overlay-backdrop',
-  ].join(',');
+  function cards() {
+    const list = (CT.site && CT.site.cards) || [];
+    return list.length ? list.join(',') : null;
+  }
+
+  function exclude() {
+    return ALWAYS_EXCLUDE.concat((CT.site && CT.site.exclude) || []).join(',');
+  }
+
+  // How far outside the viewport we still consider things, in viewport
+  // multiples. Sites with paginated rows clamp this so focus cannot walk onto a
+  // card that is sitting in the DOM but clipped off screen.
+  const OPEN_BAND = { top: -1.5, bottom: 2.5, left: -Infinity, right: Infinity };
+
+  function band() {
+    return (CT.site && CT.site.band) || OPEN_BAND;
+  }
 
   function usable(el) {
     if (!CT.isVisible(el)) return false;
-    if (el.closest(EXCLUDE_INSIDE)) return false;
     // An aria-hidden element is fine to focus, but one inside a genuinely
-    // inert subtree is not.
-    if (el.closest('[inert]')) return false;
+    // inert subtree is not, and neither is our own overlay.
+    if (el.closest(exclude())) return false;
     const r = CT.rectOf(el);
     if (!r) return false;
     if (r.width * r.height < 500) return false;
@@ -55,6 +52,9 @@
 
   function collect() {
     const vh = window.innerHeight;
+    const vw = window.innerWidth;
+    const b = band();
+    const cardSel = cards();
     const raw = document.querySelectorAll(CANDIDATES);
     const byCard = new Map();
     const loose = [];
@@ -64,9 +64,10 @@
       const r = el.getBoundingClientRect();
       // Keep a generous band around the viewport so you can navigate past the
       // fold without walking the entire lazy-rendered document.
-      if (r.bottom < -vh * 1.5 || r.top > vh * 2.5) continue;
+      if (r.bottom < vh * b.top || r.top > vh * b.bottom) continue;
+      if (r.right < vw * b.left || r.left > vw * b.right) continue;
 
-      const card = el.closest(CARDS);
+      const card = cardSel ? el.closest(cardSel) : null;
       if (card) {
         const prev = byCard.get(card);
         const area = r.width * r.height;

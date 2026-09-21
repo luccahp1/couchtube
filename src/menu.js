@@ -5,37 +5,42 @@
   let panel = null;
   let open = false;
 
-  const SHEET = {
-    player: [
-      ['confirm', 'Play / pause'],
-      ['back', 'Fullscreen out, then browse'],
-      ['left', 'Back 10s (hold to scrub)'],
-      ['right', 'Forward 10s (hold to scrub)'],
-      ['up', 'Volume up'],
-      ['down', 'Volume down'],
-      ['x', 'Captions'],
-      ['y', 'Fullscreen'],
-      ['l1', 'Back 60s'],
-      ['r1', 'Forward 60s'],
-      ['l2', 'Slower'],
-      ['r2', 'Faster'],
-      ['l3', 'Mute'],
-      ['r3', 'Next video'],
-      ['select', 'Switch to browse'],
-    ],
-    browse: [
-      ['dpad', 'Move focus'],
-      ['confirm', 'Open'],
-      ['back', 'Go back'],
-      ['x', 'Search'],
-      ['y', 'Couch zoom'],
-      ['l1', 'Page up'],
-      ['r1', 'Page down'],
-      ['l3', 'Show mouse'],
-      ['select', 'Back to the player'],
-      ['home', 'YouTube home'],
-    ],
-  };
+  // Built fresh every time it opens, because a couple of the bindings are
+  // named after whichever site you are on.
+  function sheet() {
+    const labels = CT.site.labels;
+    return {
+      player: [
+        ['confirm', 'Play / pause'],
+        ['back', 'Fullscreen out, then browse'],
+        ['left', 'Back 10s (hold to scrub)'],
+        ['right', 'Forward 10s (hold to scrub)'],
+        ['up', 'Volume up'],
+        ['down', 'Volume down'],
+        ['x', 'Captions'],
+        ['y', 'Fullscreen'],
+        ['l1', 'Back 60s'],
+        ['r1', 'Forward 60s'],
+        ['l2', 'Slower'],
+        ['r2', 'Faster'],
+        ['l3', 'Mute'],
+        ['r3', CT.site.skipAvailable ? 'Skip intro, else ' + labels.next.toLowerCase() : labels.next],
+        ['select', 'Switch to browse'],
+      ],
+      browse: [
+        ['dpad', 'Move focus'],
+        ['confirm', 'Open'],
+        ['back', 'Go back'],
+        ['x', 'Search'],
+        ['y', 'Couch zoom'],
+        ['l1', 'Page up'],
+        ['r1', 'Page down'],
+        ['l3', 'Show mouse'],
+        ['select', 'Back to the player'],
+        ['home', labels.home],
+      ],
+    };
+  }
 
   function rows(list) {
     const el = CT.ui.el;
@@ -56,17 +61,18 @@
     panel.innerHTML = `
       <div class="head">
         <h2>Controls</h2>
-        <div class="brand"><span class="dot"></span>CouchTube</div>
+        <div class="brand"><span class="dot"></span>CouchTube on ${CT.site.label}</div>
       </div>
       <div class="body"></div>
       <div class="foot"></div>`;
 
     const body = panel.querySelector('.body');
+    const sheets = sheet();
     const order = mode === 'player' ? ['player', 'browse'] : ['browse', 'player'];
     for (const key of order) {
       const group = el('div', 'group');
       group.appendChild(el('h3', null, key === 'player' ? 'Player' : 'Browsing'));
-      group.appendChild(rows(SHEET[key]));
+      group.appendChild(rows(sheets[key]));
       body.appendChild(group);
     }
 
