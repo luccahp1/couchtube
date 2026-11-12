@@ -7,7 +7,8 @@ Last touched: 2026-09-21
 Working v0.2.0. YouTube and Netflix, one adapter each behind a common interface.
 
 Suites: 21 checks on live YouTube, 39 checks on the Netflix fixtures. Both pass
-headless in one command:
+headless in one command (Netflix suite re-run 2026-11-12 after removing four unused
+one-off diagnostics from `tools/`: 39/39):
 
 ```bash
 node tools/run-e2e.mjs
