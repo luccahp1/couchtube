@@ -9,5 +9,4 @@ tools/fixtures/clip.mp4
 Thumbs.db
 
 # local assistant context, not part of the project
-CLAUDE.md
 .claude/
